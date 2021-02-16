@@ -1,0 +1,30 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool: sonic-mirror-build
+
+variables:
+- group: SONiC-Azure-Key-Vault
+- name: StorageAccount
+  value: 'sonicstoragepublic0'
+- name: StorageAccountSasToken
+  value: $(sonicstoragepublic0-SasToken)
+- name: StorageAccountReplica
+  value: 'sonicstoragepublic1'
+- name: StorageAccountReplicaSasToken
+  value: $(sonicstoragepublic1-SasToken)
+stages:
+- stage: PublishWebPackagesToUSWest2
+  jobs:
+  - job: PublishWebPackagesToUSWest2
+    timeoutInMinutes: 0
+    steps:
+    - template: ../templates/web-mirror-init-storage.yml
+    - bash: |
+        azure-pipelines/scripts/mirror/publish-web-mirror.sh
+      displayName: "Publish Web Mirror"

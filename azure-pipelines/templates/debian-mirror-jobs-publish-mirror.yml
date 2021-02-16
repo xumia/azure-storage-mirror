@@ -1,0 +1,72 @@
+parameters:
+- name: 'publishToReplica'
+  type: string
+  default: 'y'
+jobs:
+- template: jobs-template.yml
+  parameters:
+    jobVariables:
+      MIRROR_COMPONENTS: 'contrib,non-free,main'
+      MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
+    preSteps:
+    - template: debian-mirror-init-agent.yml
+    - template: debian-mirror-init-storage.yml
+      parameters:
+        mirrorName: $(GROUP_NAME)
+        nfsMountPoint: '/$(NFSName)'
+    - script: |
+        echo "StorageAccountReplica=$(StorageAccountReplica)"
+        echo "StorageAccount=$(StorageAccount)"
+        echo "MIRROR_FILESYSTEM=$MIRROR_FILESYSTEM"
+        echo "MIRROR_URL=$MIRROR_URL"
+        echo "MIRROR_DISTRIBUTIONS=$MIRROR_DISTRIBUTIONS"
+        echo "MIRROR_COMPONENTS=$MIRROR_COMPONENTS"
+        echo "MIRROR_ARICHTECTURES=$MIRROR_ARICHTECTURES"
+        echo "MIRROR_VERSION=$MIRROR_VERSION"
+        echo "GROUP_NAME=$GROUP_NAME"
+        echo "GROUP_NAMES=$GROUP_NAMES"
+        echo "UpdateMirror=$(UpdateMirror)"
+        echo "$GROUP_NAMES" > work/_aptly/mirror_names
+      displayName: 'Print Parameters'
+    - script: |
+        azure-pipelines/scripts/mirror/publish-debian-mirror.sh "$(CreateDB)" "$GROUP_NAME"
+      env:
+        PASSPHRASE: $(sonic-gpg-passphrase)
+        GPG_KEY: $(sonic-gpg-enc-private-key)
+        UPDATE_MIRROR: $(UpdateMirror)
+        GPG_PUBLIC_KEY2: $(sonic-gpg-public-key-2)
+      name: publish
+      displayName: 'Publish Mirror'
+    stepGroups:
+    - name: jessie
+      variables:
+        MIRROR_FILESYSTEM: debian
+        MIRROR_URL: 'http://deb.debian.org/debian'
+        MIRROR_DISTRIBUTIONS: 'jessie,jessie-updates'
+        MIRROR_ARICHTECTURES: 'amd64,armhf'
+    - name: stretch
+      variables:
+        MIRROR_FILESYSTEM: debian
+        MIRROR_URL: 'http://deb.debian.org/debian'
+        MIRROR_DISTRIBUTIONS: 'stretch,stretch-updates,stretch-backports'
+    - name: buster
+      variables:
+        MIRROR_FILESYSTEM: debian
+        MIRROR_URL: 'http://deb.debian.org/debian'
+        MIRROR_DISTRIBUTIONS: 'buster,buster-updates,buster-backports'
+    - name: jessie-security
+      variables:
+        MIRROR_FILESYSTEM: debian-security
+        MIRROR_URL: 'http://security.debian.org/debian-security'
+        MIRROR_DISTRIBUTIONS: 'jessie/updates'
+        MIRROR_ARICHTECTURES: 'amd64,armhf'
+    - name: stretch-security
+      variables:
+        MIRROR_FILESYSTEM: debian-security
+        MIRROR_URL: 'http://security.debian.org/debian-security'
+        MIRROR_DISTRIBUTIONS: 'stretch/updates'
+    - name: buster-security
+      variables:
+        MIRROR_FILESYSTEM: debian-security
+        MIRROR_URL: 'http://security.debian.org/debian-security'
+        MIRROR_DISTRIBUTIONS: 'buster/updates'

@@ -1,0 +1,61 @@
+stages:
+- stage: InitStage
+  jobs:
+  - job: InitJob
+    steps:
+    - template: debian-mirror-init.yml
+- stage: PublishToReplicaStage
+  dependsOn: InitStage
+  variables:
+    PublishToReplica: y
+    UpdateMirror: y
+    MIRROR_VERSION: $[ stageDependencies.InitStage.InitJob.outputs['InitStep.MirrorVersion'] ]
+  jobs:
+  - template: debian-mirror-jobs-publish-mirror.yml
+    parameters:
+      publishToReplica: y
+- stage: MigrateReplicaStage
+  dependsOn:
+  - InitStage
+  - PublishToReplicaStage
+  condition: succeeded()
+  variables:
+    PublishToReplica: n
+  jobs:
+  - job: MigrateReplica
+    steps:
+    - template: ../templates/debian-mirror-migrate-replica.yml
+- stage: PublishToPrimaryStage
+  dependsOn:
+  - InitStage
+  - MigrateReplicaStage
+  condition: and(succeeded(), eq(stageDependencies.MigrateReplicaStage.outputs['MigrateReplica.CheckVersion.MigrateCdnReplica'], 'y'))
+  variables:
+    PublishToReplica: n
+    UpdateMirror: n
+    MIRROR_VERSION: $[ stageDependencies.InitStage.InitJob.outputs['InitStep.MirrorVersion'] ]
+  jobs:
+  - template: debian-mirror-jobs-publish-mirror.yml
+    parameters:
+      publishToReplica: n
+- stage: MigratePrimaryStage
+  dependsOn:
+  - MigrateReplicaStage
+  - PublishToPrimaryStage
+  condition: and(succeeded(), eq(stageDependencies.MigrateReplicaStage.outputs['MigrateReplica.CheckVersion.MigrateCdnReplica'], 'y'))
+  variables:
+    PublishToReplica: n
+    MigrateCdnReplica: y
+  jobs:
+  - job: MigratePrimary
+    steps:
+    - template: ../templates/debian-mirror-migrate-primary.yml
+- stage: CleanUp
+  dependsOn:
+  - InitStage
+  - MigratePrimaryStage
+  condition: always()
+  jobs:
+  - job: CleanUp
+    steps:
+    - template: ../templates/debian-mirror-cleanup.yml

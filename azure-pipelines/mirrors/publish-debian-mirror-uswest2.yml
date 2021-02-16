@@ -1,0 +1,23 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+pool: sonic-mirror-build
+variables:
+- group: SONiC-Azure-Key-Vault
+- group: Debian-Mirror-Common
+- group: SONiC-Mirror-US-West2-1
+- name: StorageAccount
+  value: 'sonicstoragepublic0'
+- name: StorageAccountSasToken
+  value: $(sonicstoragepublic0-SasToken)
+- name: StorageAccountReplica
+  value: 'sonicstoragepublic1'
+- name: StorageAccountReplicaSasToken
+  value: $(sonicstoragepublic1-SasToken)
+
+stages:
+- template: ../templates/debian-mirror-stages.yml

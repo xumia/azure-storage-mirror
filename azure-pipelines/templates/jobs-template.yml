@@ -1,0 +1,51 @@
+parameters:
+- name: 'jobNames'
+  type: object
+  default: ''
+- name: 'preSteps'
+  type: stepList
+  default: []
+- name: "postSteps"
+  type: stepList
+  default: []
+- name: 'stepGroups'
+  type: object
+  default:
+  - name: 'none'
+    variables: ''
+    script: ''
+    steps: []
+- name: 'jobVariables'
+  type: object
+  default: {}
+- name: 'scriptEnv'
+  type: object
+  default: ''
+- name: 'timeoutInMinutes'
+  type: 'number'
+  default: 1440
+jobs:
+- ${{ each build in parameters.stepGroups }}:
+  - ${{ if or(eq(parameters.jobNames, ''), containsValue(parameters.jobNames, build.name)) }}:
+    - job: ${{ replace(build.name, '-', '_') }}
+      timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+      variables:
+        GROUP_NAME: ${{ build.name }}
+        GROUP_NAMES: ${{ join(',', parameters.stepGroups.*.name ) }}
+        ${{ if ne(build.variables, '') }}:
+          ${{ build.variables }}
+        ${{ each para in parameters.jobvariables }}:
+          ${{ if eq(build.variables[para.key], '') }}:
+            ${{ para.key }}: ${{ para.value }}
+      steps:
+      - ${{ parameters.preSteps }}
+      - ${{ if ne(build.script, '') }}:
+        - script: |
+            ${{ build.script }}
+          env:
+            ${{ if ne(parameters.scriptEnv, '') }}:
+              ${{ parameters.scriptEnv }}
+          displayName: 'JobScript'
+      - ${{ if ne(build.steps, '') }}:
+        - ${{ build.steps }}
+      - ${{ parameters.postSteps }}
