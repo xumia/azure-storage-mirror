@@ -3,8 +3,14 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-- main
+trigger: none
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily Build
+  branches:
+    include:
+    - main
 
 pool: sonic-mirror-build
 

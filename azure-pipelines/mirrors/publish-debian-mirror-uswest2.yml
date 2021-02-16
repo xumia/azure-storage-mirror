@@ -5,6 +5,13 @@
 
 trigger: none
 
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily Build
+  branches:
+    include:
+    - main
+
 pool: sonic-mirror-build
 variables:
 - group: SONiC-Azure-Key-Vault
