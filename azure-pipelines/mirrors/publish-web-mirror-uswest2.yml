@@ -5,12 +5,15 @@
 
 trigger: none
 
+pr: none
+
 schedules:
 - cron: "0 0 * * *"
   displayName: Daily Build
   branches:
     include:
     - main
+  always: true
 
 pool: sonic-mirror-build
 
