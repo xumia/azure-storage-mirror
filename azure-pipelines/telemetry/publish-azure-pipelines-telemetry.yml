@@ -29,7 +29,9 @@ stages:
         popd
         export AZCOPY_LOG_LOCATION=$(pwd)/azcopy
         ROOT_URL="https://$(SONIC_STORAGE_ACCOUNT).blob.core.windows.net/azp-telemetry/pipelines"
+        echo "test0"
         azcopy/azcopy copy "$ROOT_URL/version$StorageSASKey" version || true
+        echo "test1"
         STARTTIME=$(date -u --date="7 day ago" +"%Y-%m-%dT%H:%M:%S")
         ENDTIME=$(date -u +"%Y-%m-%dT%H:%M:%S")
         [ -f version ] && STARTTIME=$(cat version)
