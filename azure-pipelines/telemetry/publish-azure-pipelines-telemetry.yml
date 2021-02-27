@@ -23,5 +23,5 @@ stages:
   - job: publish
     steps:
     - script: |
-        echo "test"
+        echo "test1"
       displayName: publish
